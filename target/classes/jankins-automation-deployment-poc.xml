@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="60693056-8f03-431a-8024-307a4aaf6705" >
+		<http:listener-connection host="0.0.0.0" port="8081" />
+	</http:listener-config>
+	<flow name="jankins-automation-deployment-pocFlow" doc:id="56a436e8-24a8-4640-9d70-981f59d8493c" >
+		<http:listener doc:name="Listener" doc:id="e431530d-2f71-4ed1-b0ab-00ceb0266548" config-ref="HTTP_Listener_config" path="/test"/>
+		<logger level="INFO" doc:name="Logger" doc:id="c582d787-d9cc-46aa-93ea-c261c0a52c2e" message="#[Payload]"/>
+		<ee:transform doc:name="Transform Message" doc:id="618336a5-bcba-4bbf-b7bf-15477fffc7ec" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+    PurchaseOrder:{
+        PurchaseOrderNumber: payload.PurchaseOrder.@PurchaseOrderNumber,
+       OrderDate: payload.PurchaseOrder.@OrderDate,
+       DeliveryNotes: payload.PurchaseOrder.DeliveryNotes,
+       ShippingAddress: payload.PurchaseOrder.*Address filter $.@Type == "Shipping" map {
+           Name: $.Name,
+           Street: $.Street,
+           City: $.City,
+           State: $.State,
+           Zip: $.Zip,
+           Country: $.Country
+},
+        BillingAddress: payload.PurchaseOrder.*Address filter $.@Type == "Billing" map {
+           Name: $.Name,
+           Street: $.Street,
+           City: $.City,
+           State: $.State,
+           Zip: $.Zip,
+           Country: $.Country
+},
+Items: payload.PurchaseOrder.Items.*Item map{
+    PartNumber: $.@PartNumber,
+    ProductName: $.ProductName,
+    Quantity: $.Quantity,
+    IndiaPrice: $.IndiaPrice,
+    Comment: $.Comment,
+    ShippingDate: $.ShippingDate
+
+
+
+}
+
+}
+
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Logger" doc:id="8914c8e4-bc39-48db-b31e-2ed6ed4f3c0d" message="#[payload]"/>
+	</flow>
+</mule>
